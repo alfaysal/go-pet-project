@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+var DB *gorm.DB
+
 func ConnectDefaultDB() error {
 	cfg := config.DefaultDB()
 
@@ -18,12 +20,17 @@ func ConnectDefaultDB() error {
 		User:   url.UserPassword(cfg.Username, cfg.Password),
 	}
 
-	_, err := gorm.Open(postgres.Open(uri.String()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(uri.String()), &gorm.Config{})
 
+	DB = db
 	fmt.Println(uri.String())
 	if err != nil {
 		panic("failed to connect to database: " + err.Error())
 	}
 
 	return nil
+}
+
+func GetDefaultDB() *gorm.DB {
+	return DB
 }
