@@ -21,3 +21,13 @@ func (bookUsecase *BookUsecase) GetBookList() ([]domain.Book, error) {
 
 	return books, nil
 }
+
+func (bookUsecase *BookUsecase) GetBook(id int) (domain.Book, error) {
+	book, err := bookUsecase.bookRepo.GetBook(id)
+
+	if err != nil {
+		return domain.Book{}, err
+	}
+
+	return book, nil
+}

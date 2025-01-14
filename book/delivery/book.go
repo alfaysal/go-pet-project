@@ -1,10 +1,12 @@
 package delivery
 
 import (
+	"fmt"
 	"github.com/alfaysal/go-pet-project/domain"
 	"github.com/alfaysal/go-pet-project/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"net/http"
+	"strconv"
 )
 
 type BookHandler struct {
@@ -17,6 +19,7 @@ func New(chi *chi.Mux, bookUseCase domain.BookUsecase) {
 	}
 
 	chi.Get("/books", bookHandler.GetBookList)
+	chi.Get("/books/{id}", bookHandler.GetBook)
 }
 
 func (bookHandler *BookHandler) GetBookList(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +33,22 @@ func (bookHandler *BookHandler) GetBookList(w http.ResponseWriter, r *http.Reque
 
 	resp.WithData(&utils.Response{
 		Data:    books,
+		Message: "Fetch succesfully",
+	})
+}
+
+func (bookHandler *BookHandler) GetBook(w http.ResponseWriter, r *http.Request) {
+	resp := utils.New(w)
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	book, err := bookHandler.bookUsecase.GetBook(id)
+
+	resp.WithData(&utils.Response{
+		Data:    book,
 		Message: "Fetch succesfully",
 	})
 }

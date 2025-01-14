@@ -2,6 +2,7 @@ package domain
 
 type BookRepository interface {
 	GetBookList() ([]Book, error)
+	GetBook(id int) (Book, error)
 	//CreateBook(w http.ResponseWriter, r *http.Request)
 	//UpdateBook(w http.ResponseWriter, r *http.Request)
 	//DeleteBook(w http.ResponseWriter, r *http.Request)
@@ -15,4 +16,5 @@ type Book struct {
 
 type BookUsecase interface {
 	GetBookList() ([]Book, error)
+	GetBook(id int) (Book, error)
 }
