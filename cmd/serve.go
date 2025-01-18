@@ -9,8 +9,10 @@ import (
 	"github.com/alfaysal/go-pet-project/internal/conn"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-redis/redis"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -36,6 +38,27 @@ var serveCmd = &cobra.Command{
 			//r.Delete("/{id}", deleteBook)
 		})
 
+		client := redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",
+			DB:       0,
+		})
+
+		pong, err := client.Ping().Result()
+
+		if err != nil {
+			fmt.Println("Failed to connect to redis")
+		}
+
+		fmt.Println(pong)
+
+		err = client.Set("name", "Al faysal", time.Millisecond*1000).Err()
+
+		if err != nil {
+			fmt.Println("Failed to save to redis")
+		}
+
+		fmt.Println(client.Get("name").Val())
 		log.Fatal(http.ListenAndServe(":8099", r))
 	},
 }
