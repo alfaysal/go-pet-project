@@ -11,15 +11,15 @@ import (
 	bookRepository "github.com/alfaysal/go-pet-project/book/repository"
 	bookUsecase "github.com/alfaysal/go-pet-project/book/usecase"
 	"github.com/alfaysal/go-pet-project/internal/config"
-	"github.com/alfaysal/go-pet-project/internal/conn"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/alfaysal/go-pet-project/internal/conn"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/spf13/cobra"
+	"net/http"
 )
 
 var serveCmd = &cobra.Command{
@@ -29,6 +29,11 @@ var serveCmd = &cobra.Command{
 		fmt.Println("serve called")
 		if err := conn.ConnectDefaultDB(); err != nil {
 			fmt.Println(err)
+		}
+
+		err := conn.ConnectDefaultRedis()
+		if err != nil {
+			fmt.Println("can not connect to database")
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -47,6 +52,12 @@ var serveCmd = &cobra.Command{
 		apiRouter := chi.NewRouter()
 		r.Mount("/api", apiRouter)
 		bookHttp.New(apiRouter, bookUsecase)
+
+		cacheInstance := conn.DefaultCache()
+
+		cacheInstance.Set("name", "faysal", time.Millisecond*1000)
+
+		fmt.Println(cacheInstance.Get("name"))
 
 		srv := &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
@@ -67,6 +78,8 @@ var serveCmd = &cobra.Command{
 		if err := srv.Shutdown(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Println("Shutting down successfully")
 		}
+
+		fmt.Println("Server gracefully stopped")
 	},
 }
 

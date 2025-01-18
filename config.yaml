@@ -7,3 +7,8 @@ database:
   name: hermes
   username: root
   password: secret
+redis:
+  address: "localhost"
+  port: 6379
+  db: 0
+  password: ""
