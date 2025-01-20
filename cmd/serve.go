@@ -11,6 +11,7 @@ import (
 	bookRepository "github.com/alfaysal/go-pet-project/book/repository"
 	bookUsecase "github.com/alfaysal/go-pet-project/book/usecase"
 	"github.com/alfaysal/go-pet-project/internal/config"
+	"io"
 	"os"
 	"os/signal"
 	"time"
@@ -35,6 +36,9 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println("can not connect to database")
 		}
+
+		conn.InitHttpClient()
+
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		stop := make(chan os.Signal, 1)
@@ -53,11 +57,12 @@ var serveCmd = &cobra.Command{
 		r.Mount("/api", apiRouter)
 		bookHttp.New(apiRouter, bookUsecase)
 
-		cacheInstance := conn.DefaultCache()
-
-		cacheInstance.Set("name", "faysal", time.Millisecond*1000)
-
-		fmt.Println(cacheInstance.Get("name"))
+		// cache sample
+		//cacheInstance := conn.DefaultCache()
+		//
+		//cacheInstance.Set("name", "faysal", time.Millisecond*1000)
+		//
+		//fmt.Println(cacheInstance.Get("name"))
 
 		srv := &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
@@ -69,6 +74,24 @@ var serveCmd = &cobra.Command{
 				fmt.Println("Something went wrong")
 			}
 		}(srv)
+
+		// api consume
+		client := &http.Client{}
+		// Create the request
+		urls := []string{
+			"https://jsonplaceholder.typicode.com/todos/1",
+			"https://jsonplaceholder.typicode.com/todos/2",
+			"https://jsonplaceholder.typicode.com/todos/3",
+		}
+		result := make(chan string, 3)
+
+		go func() {
+			fetchFromHttp(urls, result, client)
+		}()
+
+		for i := 0; i < 3; i++ {
+			fmt.Println(<-result)
+		}
 
 		<-stop
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -85,4 +108,33 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+}
+
+func fetchFromHttp(urls []string, result chan<- string, client *http.Client) {
+
+	for _, url := range urls {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			fmt.Println("Error creating request:", err)
+			return
+		}
+
+		// Set headers (optional)
+		req.Header.Set("Accept", "application/json")
+		// Send the request
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println("Error making request:", err)
+		}
+
+		defer resp.Body.Close()
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Error reading response:", err)
+			return
+		}
+
+		result <- string(body)
+	}
 }
