@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"github.com/alfaysal/go-pet-project/domain"
+	"github.com/alfaysal/go-pet-project/dto"
 	"gorm.io/gorm"
 )
 
@@ -10,10 +11,15 @@ type BookSQL struct {
 	db *gorm.DB
 }
 
-func (bookSql *BookSQL) GetBookList() ([]domain.Book, error) {
+func (bookSql *BookSQL) GetBookList(ctr *dto.BookCriteria) ([]domain.Book, error) {
 	var books []domain.Book
+	query := bookSql.db
 
-	if err := bookSql.db.Find(&books).Error; err != nil {
+	if ctr.ID != 0 {
+		query = query.Where("id = ?", ctr.ID)
+	}
+
+	if err := query.Find(&books).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch books: %w", err)
 	}
 

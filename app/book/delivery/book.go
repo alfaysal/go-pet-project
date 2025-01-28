@@ -3,6 +3,7 @@ package delivery
 import (
 	"fmt"
 	"github.com/alfaysal/go-pet-project/domain"
+	"github.com/alfaysal/go-pet-project/dto"
 	"github.com/alfaysal/go-pet-project/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -25,7 +26,22 @@ func New(chi *chi.Mux, bookUseCase domain.BookUsecase) {
 func (bookHandler *BookHandler) GetBookList(w http.ResponseWriter, r *http.Request) {
 	resp := utils.New(w)
 
-	books, err := bookHandler.bookUsecase.GetBookList()
+	bookDto := dto.BookCriteria{}
+
+	if r.URL.Query().Get("id") != "" {
+		bookID, err := strconv.ParseUint(r.URL.Query().Get("id"), 10, 64)
+
+		if err != nil {
+			resp.WithError(&utils.Response{
+				Code:    http.StatusBadRequest,
+				Message: err.Error(),
+			})
+		}
+
+		bookDto.ID = bookID
+	}
+
+	books, err := bookHandler.bookUsecase.GetBookList(&bookDto)
 
 	if err != nil {
 		resp.WithInternalServerError()

@@ -40,6 +40,27 @@ func (r *response) WithInternalServerError() {
 	}
 }
 
+func (r *response) WithError(ctr *Response) {
+	r.Code = ctr.Code
+
+	if ctr.Code == 0 {
+		r.Code = http.StatusOK
+	}
+
+	if ctr.Data != nil {
+		r.Data = ctr.Data
+	}
+
+	r.Message = ctr.Message
+
+	r.w.WriteHeader(r.Code)
+
+	err := json.NewEncoder(r.w).Encode(r)
+	if err != nil {
+		return
+	}
+}
+
 func (r *response) WithData(ctr *Response) {
 	if ctr.Data != nil {
 		r.Data = ctr.Data

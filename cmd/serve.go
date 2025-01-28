@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	bookHttp "github.com/alfaysal/go-pet-project/book/delivery"
-	bookRepository "github.com/alfaysal/go-pet-project/book/repository"
-	bookUsecase "github.com/alfaysal/go-pet-project/book/usecase"
+	bookHttp "github.com/alfaysal/go-pet-project/app/book/delivery"
+	bookRepository "github.com/alfaysal/go-pet-project/app/book/repository"
+	bookUsecase "github.com/alfaysal/go-pet-project/app/book/usecase"
 	"github.com/alfaysal/go-pet-project/internal/config"
 	"io"
 	"os"
@@ -51,18 +51,17 @@ var serveCmd = &cobra.Command{
 
 		bookRepository := bookRepository.New(conn.GetDefaultDB())
 
-		bookUsecase := bookUsecase.New(bookRepository)
-
-		apiRouter := chi.NewRouter()
-		r.Mount("/api", apiRouter)
-		bookHttp.New(apiRouter, bookUsecase)
-
 		// cache sample
-		//cacheInstance := conn.DefaultCache()
+		cacheInstance := conn.DefaultCache()
 		//
 		//cacheInstance.Set("name", "faysal", time.Millisecond*1000)
 		//
 		//fmt.Println(cacheInstance.Get("name"))
+		bookUsecase := bookUsecase.New(bookRepository, cacheInstance)
+
+		apiRouter := chi.NewRouter()
+		r.Mount("/api", apiRouter)
+		bookHttp.New(apiRouter, bookUsecase)
 
 		srv := &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
@@ -74,24 +73,6 @@ var serveCmd = &cobra.Command{
 				fmt.Println("Something went wrong")
 			}
 		}(srv)
-
-		// api consume
-		client := &http.Client{}
-		// Create the request
-		urls := []string{
-			"https://jsonplaceholder.typicode.com/todos/1",
-			"https://jsonplaceholder.typicode.com/todos/2",
-			"https://jsonplaceholder.typicode.com/todos/3",
-		}
-		result := make(chan string, 3)
-
-		go func() {
-			fetchFromHttp(urls, result, client)
-		}()
-
-		for i := 0; i < 3; i++ {
-			fmt.Println(<-result)
-		}
 
 		<-stop
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

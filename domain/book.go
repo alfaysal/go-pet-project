@@ -1,7 +1,9 @@
 package domain
 
+import "github.com/alfaysal/go-pet-project/dto"
+
 type BookRepository interface {
-	GetBookList() ([]Book, error)
+	GetBookList(ctr *dto.BookCriteria) ([]Book, error)
 	GetBook(id int) (Book, error)
 	//CreateBook(w http.ResponseWriter, r *http.Request)
 	//UpdateBook(w http.ResponseWriter, r *http.Request)
@@ -15,6 +17,6 @@ type Book struct {
 }
 
 type BookUsecase interface {
-	GetBookList() ([]Book, error)
+	GetBookList(ctr *dto.BookCriteria) ([]Book, error)
 	GetBook(id int) (Book, error)
 }
