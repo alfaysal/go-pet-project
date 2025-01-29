@@ -1,9 +1,12 @@
 package usecase
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/alfaysal/go-pet-project/domain"
 	"github.com/alfaysal/go-pet-project/dto"
 	"github.com/alfaysal/go-pet-project/internal/cache"
+	"time"
 )
 
 type BookUsecase struct {
@@ -19,9 +22,26 @@ func New(bookRepo domain.BookRepository, cache cache.Cache) domain.BookUsecase {
 }
 
 func (bookUsecase *BookUsecase) GetBookList(ctr *dto.BookCriteria) ([]domain.Book, error) {
-	books, err := bookUsecase.bookRepo.GetBookList(ctr)
+	var books []domain.Book
+	val, err := bookUsecase.cache.Get("books")
+
+	if val != "" {
+		err = json.Unmarshal([]byte(val), &books)
+
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("Cache hit")
+		return books, nil
+	}
+
+	books, err = bookUsecase.bookRepo.GetBookList(ctr)
 
 	if err != nil {
+		return nil, err
+	}
+
+	if err := bookUsecase.cache.Set("books", books, time.Second*60); err != nil {
 		return nil, err
 	}
 
